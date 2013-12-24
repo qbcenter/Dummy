@@ -1,9 +1,19 @@
-/****** Object:  StoredProcedure [bonus].[SP004_ModifyStaffBonus]    Script Date: 03/14/2012 20:56:31 ******/
-SET ANSI_NULLS ON
-GO
+Ôªø/****** Object:  StoredProcedure bonus.SP004_ModifyStaffBonus    Script Date: 03/14/2012 20:56:31 ******/
+if exists 
+(
+  select * 
+  from sys.objects 
+  where object_id = object_id('bonus.SP004_ModifyStaffBonus') 
+  and type in ('P', 'PC')
+)
+drop procedure bonus.SP004_ModifyStaffBonus
+go
 
-SET QUOTED_IDENTIFIER ON
-GO
+set ansi_nulls on
+go
+
+set quoted_identifier on
+go
 
 -- ===================================================================
 -- NAME:
@@ -20,7 +30,7 @@ GO
 --   File created.
 -- ===================================================================
 
-CREATE PROCEDURE [bonus].[SP004_ModifyStaffBonus]
+create procedure bonus.SP004_ModifyStaffBonus
   @SITE_ID nvarchar(50) = null,
   @STAFF_ID nvarchar(50) = null,
   @MONTH_START_DATE datetime = null,
@@ -31,98 +41,84 @@ CREATE PROCEDURE [bonus].[SP004_ModifyStaffBonus]
   @REMARK_CONTENT nvarchar(255) = null,
   @ACTION_TYPE nvarchar(10) = null,
   @STAFF_BONUS_CATEGORY_ID nvarchar(50) = null
-AS
-  DECLARE @strStaffInsertBonusCategoryID nvarchar(50) = null
-  DECLARE @intStaffBonusKey int = null
-  DECLARE @dtRecordInsertDate datetime = GETDATE()
-  DECLARE @dtMonthStartDate datetime = null
+as
+  declare @strStaffInsertBonusCategoryID nvarchar(50) = null
+  declare @intStaffBonusKey int = null
+  declare @dtRecordInsertDate datetime = getdate()
+  declare @dtMonthStartDate datetime = null
   
-BEGIN
-  -- SET NOCOUNT ON added to prevent extra result sets from interfering with SELECT statements.
-  SET NOCOUNT OFF;
+begin
+  -- set NOCOUNT on added to prevent extra result sets from interfering with select statements.
+  set nocount off;
 
-  IF @ACTION_TYPE = 'UPS'
-  BEGIN
-    IF @STAFF_BONUS_KEY IS NOT NULL
-    BEGIN
-      SELECT @strStaffInsertBonusCategoryID = sb.BONUS_CATEGORY_ID
-      FROM bonus.STAFF_BONUS sb
-      INNER JOIN bonus.BONUS_CATEGORY bc ON sb.BONUS_CATEGORY_ID = bc.BONUS_CATEGORY_ID
-      WHERE STAFF_BONUS_KEY = @STAFF_BONUS_KEY 
+  if @ACTION_TYPE = 'UPS'
+  begin
+    if @STAFF_BONUS_KEY is not null
+    begin
+      select @strStaffInsertBonusCategoryID = sb.BONUS_CATEGORY_ID
+      from bonus.STAFF_BONUS sb
+      inner join bonus.BONUS_CATEGORY bc on sb.BONUS_CATEGORY_ID = bc.BONUS_CATEGORY_ID
+      where STAFF_BONUS_KEY = @STAFF_BONUS_KEY 
 
-      IF @strStaffInsertBonusCategoryID = @STAFF_BONUS_CATEGORY_ID
-      BEGIN
-        -- ¶p™G¨OΩ’æ„º˙™˜TYPE •≤©w¨O≠◊ßÔ
+      if @strStaffInsertBonusCategoryID = @STAFF_BONUS_CATEGORY_ID
+      begin
+        -- Â¶ÇÊûúÊòØË™øÊï¥ÁçéÈáëTYPE ÂøÖÂÆöÊòØ‰øÆÊîπ
      
-        -- UPDATE A RECORD
-        SELECT @dtMonthStartDate = CONVERT(NVARCHAR(10), MONTH_START_DATE, 120) 
-        FROM bonus.STAFF_BONUS
-        WHERE STAFF_BONUS_KEY = @STAFF_BONUS_KEY 
+        -- update A RECORD
+        select @dtMonthStartDate = convert(nvarchar(10), MONTH_START_DATE, 120) 
+        from bonus.STAFF_BONUS
+        where STAFF_BONUS_KEY = @STAFF_BONUS_KEY 
      
-        -- CHECK CONTAIN, BONUS AMOUNT, MONTH START DATE IS VALID
-        IF @REMARK_CONTENT IS NOT NULL AND @BONUS_AMOUNT IS NOT NULL AND @dtMonthStartDate = @MONTH_START_DATE 
-        BEGIN
-          UPDATE bonus.REMARK SET REMARK_CONTENT = @REMARK_CONTENT, UPDATE_TIMESTAMP = GETDATE(), UPDATE_BY_ID = @UPDATE_BY_ID
-          WHERE REMARK_RECORD_NO = @STAFF_BONUS_KEY
+        update bonus.REMARK set REMARK_CONTENT = @REMARK_CONTENT, UPDATE_TIMESTAMP = getdate(), UPDATE_BY_ID = @UPDATE_BY_ID
+        where REMARK_RECORD_NO = @STAFF_BONUS_KEY
         
-          UPDATE bonus.STAFF_BONUS SET BONUS_AMOUNT = @BONUS_AMOUNT, UPDATE_TIMESTAMP = GETDATE(), UPDATE_BY_ID = @UPDATE_BY_ID
-          WHERE STAFF_BONUS_KEY = @STAFF_BONUS_KEY
-        END -- @REMARK_CONTENT IS NOT NULL AND @BONUS_AMOUNT IS NOT NULL AND @dtMonthStartDate = @MONTH_START_DATE
-      END 
-      ELSE
-      BEGIN
-        -- §£¶Pº˙™˜ÆÊ¶°¨O∑sºW§@µßΩ’æ„º˙™˜
+        update bonus.STAFF_BONUS set BONUS_AMOUNT = @BONUS_AMOUNT, UPDATE_TIMESTAMP = getdate(), UPDATE_BY_ID = @UPDATE_BY_ID
+        where STAFF_BONUS_KEY = @STAFF_BONUS_KEY
+      end 
+      else
+      begin
+        -- ‰∏çÂêåÁçéÈáëÊ†ºÂºèÊòØÊñ∞Â¢û‰∏ÄÁ≠ÜË™øÊï¥ÁçéÈáë
         -- INSERT A NEW RECORD      
-        IF @REMARK_CONTENT IS NOT NULL AND @BONUS_AMOUNT IS NOT NULL
-        BEGIN
+        insert into bonus.STAFF_BONUS (SITE_ID, STAFF_ID, MONTH_START_DATE, BONUS_REFER_KEY, BONUS_CATEGORY_ID, BONUS_AMOUNT, CREATE_TIMESTAMP, CREATE_BY_ID)
+        values (@SITE_ID, @STAFF_ID, @MONTH_START_DATE, @strStaffInsertBonusCategoryID, @STAFF_BONUS_CATEGORY_ID, @BONUS_AMOUNT, @dtRecordInsertDate, @UPDATE_BY_ID)
 
-          INSERT INTO bonus.STAFF_BONUS (SITE_ID, STAFF_ID, MONTH_START_DATE, BONUS_REFER_KEY, BONUS_CATEGORY_ID, BONUS_AMOUNT, CREATE_TIMESTAMP, CREATE_BY_ID)
-          VALUES (@SITE_ID, @STAFF_ID, @MONTH_START_DATE, @strStaffInsertBonusCategoryID, @STAFF_BONUS_CATEGORY_ID, @BONUS_AMOUNT, @dtRecordInsertDate, @UPDATE_BY_ID)
-
-          SELECT @intStaffBonusKey = STAFF_BONUS_KEY
-          FROM bonus.STAFF_BONUS
-          WHERE STAFF_ID = @STAFF_ID AND MONTH_START_DATE = @MONTH_START_DATE 
-          AND BONUS_CATEGORY_ID = @STAFF_BONUS_CATEGORY_ID AND CREATE_TIMESTAMP = @dtRecordInsertDate
+        select @intStaffBonusKey = STAFF_BONUS_KEY
+        from bonus.STAFF_BONUS
+        where STAFF_ID = @STAFF_ID and MONTH_START_DATE = @MONTH_START_DATE 
+        and BONUS_CATEGORY_ID = @STAFF_BONUS_CATEGORY_ID and CREATE_TIMESTAMP = @dtRecordInsertDate
       
-          INSERT INTO bonus.REMARK (REMARK_SOURCE, REMARK_RECORD_NO, REMARK_CONTENT, CREATE_TIMESTAMP, CREATE_BY_ID)
-          VALUES (@REMARK_SOURCE, @intStaffBonusKey, @REMARK_CONTENT,  GETDATE(), @UPDATE_BY_ID)
-
-        END -- @REMARK_CONTENT IS NOT NULL AND @BONUS_AMOUNT IS NOT NULL
-      END 
-    END -- @STAFF_BONUS_KEY IS NOT NULL
-    ELSE
-    BEGIN
+        insert into bonus.REMARK (REMARK_SOURCE, REMARK_RECORD_NO, REMARK_CONTENT, CREATE_TIMESTAMP, CREATE_BY_ID)
+        values (@REMARK_SOURCE, @intStaffBonusKey, @REMARK_CONTENT,  getdate(), @UPDATE_BY_ID)
+      end 
+    end -- @STAFF_BONUS_KEY is not null
+    else
+    begin
       -- INSERT A NEW RECORD NO REFER KEY
-      IF @REMARK_CONTENT IS NOT NULL AND @BONUS_AMOUNT IS NOT NULL
-      BEGIN
-      
-        INSERT INTO bonus.STAFF_BONUS (SITE_ID, STAFF_ID, MONTH_START_DATE, BONUS_CATEGORY_ID, BONUS_AMOUNT, CREATE_TIMESTAMP, CREATE_BY_ID)
-        VALUES (@SITE_ID, @STAFF_ID, @MONTH_START_DATE, @STAFF_BONUS_CATEGORY_ID, @BONUS_AMOUNT, @dtRecordInsertDate, @UPDATE_BY_ID)      
+      insert into bonus.STAFF_BONUS (SITE_ID, STAFF_ID, MONTH_START_DATE, BONUS_CATEGORY_ID, BONUS_AMOUNT, CREATE_TIMESTAMP, CREATE_BY_ID)
+      values (@SITE_ID, @STAFF_ID, @MONTH_START_DATE, @STAFF_BONUS_CATEGORY_ID, @BONUS_AMOUNT, @dtRecordInsertDate, @UPDATE_BY_ID)      
 
-        SELECT @intStaffBonusKey = STAFF_BONUS_KEY
-        FROM bonus.STAFF_BONUS
-        WHERE STAFF_ID = @STAFF_ID AND MONTH_START_DATE = @MONTH_START_DATE 
-        AND BONUS_CATEGORY_ID = @STAFF_BONUS_CATEGORY_ID AND CREATE_TIMESTAMP = @dtRecordInsertDate
+      select @intStaffBonusKey = STAFF_BONUS_KEY
+      from bonus.STAFF_BONUS
+      where STAFF_ID = @STAFF_ID and MONTH_START_DATE = @MONTH_START_DATE 
+      and BONUS_CATEGORY_ID = @STAFF_BONUS_CATEGORY_ID and CREATE_TIMESTAMP = @dtRecordInsertDate
       
-        INSERT INTO bonus.REMARK (REMARK_SOURCE, REMARK_RECORD_NO, REMARK_CONTENT, CREATE_TIMESTAMP, CREATE_BY_ID)
-        VALUES (@REMARK_SOURCE, @intStaffBonusKey, @REMARK_CONTENT,  GETDATE(), @UPDATE_BY_ID)
-
-      END -- @REMARK_CONTENT IS NOT NULL AND @BONUS_AMOUNT IS NOT NULL
-    END -- @STAFF_BONUS_KEY IS NOT NULL
-  END
-  ELSE IF @ACTION_TYPE = 'DEL'
-  BEGIN
-    IF @STAFF_BONUS_KEY IS NOT NULL
-    BEGIN
-      DELETE FROM bonus.REMARK
-      WHERE REMARK_RECORD_NO = @STAFF_BONUS_KEY
+      insert into bonus.REMARK (REMARK_SOURCE, REMARK_RECORD_NO, REMARK_CONTENT, CREATE_TIMESTAMP, CREATE_BY_ID)
+      values (@REMARK_SOURCE, @intStaffBonusKey, @REMARK_CONTENT,  getdate(), @UPDATE_BY_ID)
+    end -- @STAFF_BONUS_KEY is not null
+  end
+  else if @ACTION_TYPE = 'DEL'
+  begin
+    if @STAFF_BONUS_KEY is not null
+    begin
+      delete from bonus.REMARK
+      where REMARK_RECORD_NO = @STAFF_BONUS_KEY
       
-      DELETE FROM bonus.STAFF_BONUS
-      WHERE STAFF_BONUS_KEY = @STAFF_BONUS_KEY
-    END -- @STAFF_BONUS_KEY IS NOT NULL
-  END -- @ACTION_TYPE = 'DEL'
-END
+      delete from bonus.STAFF_BONUS
+      where STAFF_BONUS_KEY = @STAFF_BONUS_KEY
+    end -- @STAFF_BONUS_KEY is not null
+  end -- @ACTION_TYPE = 'DEL'
+end
 
-GO
+go
 
 
