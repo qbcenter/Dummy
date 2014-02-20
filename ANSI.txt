@@ -1,2 +1,2 @@
-AABBCC
+﻿AABBCC
 測試中文
